@@ -71,7 +71,7 @@
 	AFRAME.registerComponent('teleport-controls', {
 	  schema: {
 	    type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
-	    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+	    button: {default: 'stick', oneOf: ['stick', 'trackpad', 'trigger', 'grip', 'menu']},
 	    startEvents: {type: 'array'},
 	    endEvents: {type: 'array'},
 	    collisionEntities: {default: ''},
@@ -89,7 +89,7 @@
 	    curveMissColor: {type: 'color', default: '#ff0000'},
 	    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
 	    defaultPlaneSize: { default: 100 },
-	    landingNormal: {type: 'vec3', default: '0 1 0'},
+	    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 }},
 	    landingMaxAngle: {default: '45', min: 0, max: 360},
 	    drawIncrementally: {default: false},
 	    incrementalDrawMs: {default: 700},
@@ -102,6 +102,7 @@
 	    var el = this.el;
 	    var teleportEntity;
 	    var i;
+		const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
 
 	    this.active = false;
 	    this.obj = el.object3D;
@@ -132,6 +133,36 @@
 
 	    this.onButtonDown = this.onButtonDown.bind(this);
 	    this.onButtonUp = this.onButtonUp.bind(this);
+		var rotationDone = false;
+		var teleportationDone = false;
+		el.addEventListener('thumbstickmoved', function(evt){
+				
+			var analogValueX, analogValueY;
+			analogValueX = evt.detail.x;
+			analogValueY = evt.detail.y;
+			if(analogValueY<-0.80 && !teleportationDone){
+				el.emit(data.button + 'down', {}, false);
+				teleportationDone=true;
+			}
+			if(analogValueX>0.80 && !rotationDone){
+				var currentRotationY = rig.getAttribute('rotation').y;
+				rig.setAttribute('rotation', '0 '+(currentRotationY-90)+ ' 0');
+				rotationDone=true;
+			}
+			if(analogValueX<-0.80 && !rotationDone){
+				var currentRotationY = rig.getAttribute('rotation').y;
+				rig.setAttribute('rotation', '0 '+(currentRotationY+90)+ ' 0');
+				rotationDone=true;
+			}
+			if(analogValueX==0 && analogValueY==0 && rotationDone){
+				rotationDone=false;
+			}
+			if(analogValueX==0 && analogValueY==0 && teleportationDone){
+				el.emit(data.button + 'up', {}, false);
+				teleportationDone=false;
+			}
+	    });
+	   
 	    if (this.data.startEvents.length && this.data.endEvents.length) {
 
 	      for (i = 0; i < this.data.startEvents.length; i++) {
