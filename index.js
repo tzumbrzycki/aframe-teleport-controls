@@ -52,11 +52,12 @@ AFRAME.registerComponent('teleport-controls', {
   },
 
   init: function () {
+    const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
+
     var data = this.data;
     var el = this.el;
     var teleportEntity;
     var i;
-	const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
 
     this.active = false;
     this.obj = el.object3D;
